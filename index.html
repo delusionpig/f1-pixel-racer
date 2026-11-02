@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#090909" />
+  <title>生日大奖赛</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="game-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">GP</span><div><b>生日大奖赛</b><small>PIXEL GRAND PRIX</small></div></div>
+      <div class="race-tag"><i></i> ROUND 01</div>
+    </header>
+    <section class="stage" aria-label="像素赛车游戏区域">
+      <canvas id="game" width="480" height="800" aria-label="用方向键或拖动赛车进行游戏"></canvas>
+      <div class="hud" id="hud" aria-live="polite">
+        <div class="hud-card"><small>金币</small><b><span class="coin-icon">◆</span> <span id="coinCount">0</span><em> / 5</em></b></div>
+        <div class="hud-card damage-card"><div><small>碰撞</small><b id="damageCount">♥ ♥</b></div><div class="reaction"><small>起跑反应</small><b id="reactionTime">--- ms</b></div></div>
+      </div>
+      <div class="overlay" id="overlay">
+        <div class="start-card" id="startCard">
+          <div class="eyebrow">ARCADE RACING · 8-BIT</div>
+          <h1>生日大奖赛</h1>
+          <p>躲开轮胎，收集 5 枚金币<br />冲过终点，登上冠军领奖台</p>
+          <div class="light-rig" id="lightRig" aria-label="起步信号灯">
+            <img id="signalImage" src="assets/start-light-0.png" alt="五盏红色起步灯" />
+          </div>
+          <button id="startButton">点火出发 <span>▶</span></button>
+          <div class="controls-hint" id="startHint">点击“点火出发”开始灯光倒计时</div>
+        </div>
+        <div class="end-card hidden" id="endCard">
+          <div class="eyebrow" id="endEyebrow">RACE OVER</div>
+          <h2 id="endTitle">比赛结束</h2>
+          <p id="endCopy"></p>
+          <div class="podium hidden" id="podium"><img src="assets/podium.png" alt="F1像素风领奖台庆典" /></div>
+          <div class="video-placeholder hidden" id="videoPlaceholder"><div class="play-icon">▶</div><b>生日祝福时刻</b><small>领奖台视频播放区域</small></div>
+          <button id="restartButton">再跑一圈 <span>↻</span></button>
+          <div class="controls-hint">点击或按 Enter 重新开始</div>
+        </div>
+      </div>
+      <div class="speed-lines" aria-hidden="true"><span></span><span></span><span></span></div>
+    </section>
+    <footer><span>SCUDERIA PIXEL · 8-BIT RACING</span><span>© 2026</span></footer>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
