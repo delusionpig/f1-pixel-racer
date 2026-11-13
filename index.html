@@ -20,7 +20,17 @@
         <div class="hud-card damage-card"><div><small>碰撞</small><b id="damageCount">♥ ♥</b></div><div class="reaction"><small>起跑反应</small><b id="reactionTime">--- ms</b></div></div>
       </div>
       <div class="overlay" id="overlay">
-        <div class="start-card" id="startCard">
+        <div class="loading-backdrop" id="loadingBackdrop"></div>
+        <div class="loading-card" id="loadingCard" role="status" aria-live="polite">
+          <div class="eyebrow">SCUDERIA PIXEL · SYSTEM CHECK</div>
+          <img class="loading-car" src="assets/race-car.png" alt="" />
+          <h1>车队准备中</h1>
+          <p id="loadingStatus">正在检查赛车与赛道素材…</p>
+          <div class="loading-meter"><div class="loading-fill" id="loadingFill"></div></div>
+          <div class="loading-meta"><span id="loadingPercent">0%</span><span id="loadingCount">0 / 12</span></div>
+          <button class="loading-retry hidden" id="loadingRetry" type="button">重试加载 <span>↻</span></button>
+        </div>
+        <div class="start-card hidden" id="startCard">
           <div class="eyebrow">ARCADE RACING · 8-BIT</div>
           <h1>生日大奖赛</h1>
           <p>躲开轮胎，收集 5 枚金币<br />冲过终点，登上冠军领奖台</p>
@@ -49,7 +59,7 @@
         <div class="tv-frame">
           <div class="tv-topline"><span></span> BIRTHDAY GRAND PRIX <span></span></div>
           <div class="tv-screen">
-            <video id="birthdayVideo" controls playsinline preload="metadata"></video>
+            <video id="birthdayVideo" controls playsinline preload="auto"></video>
           </div>
           <div class="tv-controls"><span class="tv-led"></span><span>生日祝福时刻</span><span class="tv-knob"></span></div>
         </div>

@@ -4,6 +4,13 @@
   const stage = document.querySelector('.stage');
   const overlay = document.getElementById('overlay');
   const startCard = document.getElementById('startCard');
+  const loadingCard = document.getElementById('loadingCard');
+  const loadingBackdrop = document.getElementById('loadingBackdrop');
+  const loadingFill = document.getElementById('loadingFill');
+  const loadingPercent = document.getElementById('loadingPercent');
+  const loadingCount = document.getElementById('loadingCount');
+  const loadingStatus = document.getElementById('loadingStatus');
+  const loadingRetry = document.getElementById('loadingRetry');
   const endCard = document.getElementById('endCard');
   const startButton = document.getElementById('startButton');
   const restartButton = document.getElementById('restartButton');
@@ -16,12 +23,26 @@
   const coinCount = document.getElementById('coinCount');
   const damageCount = document.getElementById('damageCount');
   const car = new Image();
-  car.src = 'assets/race-car.png';
-  const coinSprite = new Image(); coinSprite.src = 'assets/coin.png';
-  const tireSprite = new Image(); tireSprite.src = 'assets/tires.png';
-  const paddockFront = new Image(); paddockFront.src = 'assets/paddock-front.jpg';
-  const paddockBack = new Image(); paddockBack.src = 'assets/paddock-back.jpg';
-  birthdayVideo.src = 'assets/birthday-message.mp4';
+  const coinSprite = new Image();
+  const tireSprite = new Image();
+  const paddockFront = new Image();
+  const paddockBack = new Image();
+  const podiumImage = document.querySelector('#podium img');
+  const startLights = Array.from({ length: 6 }, () => new Image());
+  const totalAssets = 13;
+  let assetsReady = false;
+  let completedAssets = 0;
+  let videoProgress = 0;
+  const assetImages = [
+    [car, 'assets/race-car.png', '赛车精灵'],
+    [coinSprite, 'assets/coin.png', '金币素材'],
+    [tireSprite, 'assets/tires.png', '轮胎素材'],
+    [paddockFront, 'assets/paddock-front.jpg', '赛道前景'],
+    [paddockBack, 'assets/paddock-back.jpg', '赛道背景'],
+    [podiumImage, 'assets/podium.png', '领奖台'],
+    ...startLights.map((image, i) => [image, `assets/start-light-${i}.png`, '起步信号灯'])
+  ];
+  const birthdayVideoUrl = 'assets/birthday-message.mp4';
   const W = 480, H = 800, ROAD_TOP = 184, ROAD_BOTTOM = 632;
   let state = 'ready', last = 0, elapsed = 0, scroll = 0, spawnTimer = 0;
   let coins = 0, hits = 0, playerY = 400, pointerTarget = null, objects = [], particles = [];
@@ -29,6 +50,101 @@
   const keys = new Set();
   const lanes = [268, 400, 532];
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  function setLoadingProgress(loaded, label) {
+    const percent = Math.min(100, Math.round((loaded + videoProgress) / totalAssets * 100));
+    loadingFill.style.width = `${percent}%`;
+    loadingPercent.textContent = `${percent}%`;
+    loadingCount.textContent = `${loaded} / ${totalAssets}`;
+    if (label) loadingStatus.textContent = label;
+  }
+
+  function loadImage(image, src, label) {
+    return new Promise((resolve, reject) => {
+      const finishLoad = async () => {
+        try {
+          if (image.decode) await image.decode();
+          resolve(label);
+        } catch {
+          reject(new Error(`${label}解码失败`));
+        }
+      };
+      if (image.complete && image.naturalWidth) {
+        finishLoad();
+        return;
+      }
+      image.onload = finishLoad;
+      image.onerror = () => reject(new Error(`${label}加载失败`));
+      image.src = src;
+    });
+  }
+
+  async function loadBirthdayVideo() {
+    const response = await fetch(birthdayVideoUrl, { cache: 'force-cache' });
+    if (!response.ok) throw new Error('生日祝福视频加载失败');
+    const length = Number(response.headers.get('content-length')) || 0;
+    const reader = response.body?.getReader();
+    if (reader) {
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        received += value.length;
+        const percent = length ? Math.floor(received / length * 100) : 0;
+        videoProgress = Math.min(.99, percent / 100);
+        const overall = Math.floor((completedAssets + videoProgress) / totalAssets * 100);
+        loadingFill.style.width = `${overall}%`;
+        loadingPercent.textContent = `${overall}%`;
+        loadingCount.textContent = `${completedAssets} / ${totalAssets}`;
+        loadingStatus.textContent = `正在下载生日祝福视频 ${percent}%…`;
+      }
+    } else {
+      videoProgress = .99;
+      loadingStatus.textContent = '正在缓存生日祝福视频…';
+    }
+    await new Promise((resolve, reject) => {
+      birthdayVideo.oncanplaythrough = resolve;
+      birthdayVideo.onerror = () => reject(new Error('生日祝福视频解码失败'));
+      birthdayVideo.src = birthdayVideoUrl;
+      birthdayVideo.load();
+    });
+    return '生日祝福视频';
+  }
+
+  async function loadAllAssets() {
+    assetsReady = false;
+    completedAssets = 0;
+    videoProgress = 0;
+    loadingCard.classList.remove('hidden');
+    loadingBackdrop.classList.remove('hidden');
+    startCard.classList.add('hidden');
+    loadingRetry.classList.add('hidden');
+    startButton.disabled = true;
+    loadingStatus.textContent = '正在检查赛车与赛道素材…';
+    setLoadingProgress(0);
+    let loaded = 0;
+    const tasks = assetImages.map(([image, src, label]) => loadImage(image, src, label));
+    tasks.push(loadBirthdayVideo());
+    try {
+      await Promise.all(tasks.map(task => task.then(label => {
+        loaded++;
+        completedAssets = loaded;
+        setLoadingProgress(loaded, `${label}已就绪`);
+      })));
+      loaded = totalAssets;
+      completedAssets = totalAssets;
+      assetsReady = true;
+      setLoadingProgress(totalAssets, '全部素材已就绪，车手请准备');
+      loadingCard.classList.add('hidden');
+      loadingBackdrop.classList.add('hidden');
+      startCard.classList.remove('hidden');
+      startHint.textContent = '所有游戏素材已加载，点击点火开始';
+      startButton.disabled = false;
+    } catch (error) {
+      loadingStatus.textContent = `${error.message}，请检查网络后重试`;
+      loadingRetry.classList.remove('hidden');
+    }
+  }
 
   function drawPixelRoad(dt) {
     const shift = scroll % 80;
@@ -144,7 +260,7 @@
   }
 
   function startRace() {
-    if (state === 'countdown' || state === 'running') return;
+    if (!assetsReady || state === 'countdown' || state === 'running') return;
     state = 'countdown'; startButton.disabled = true;
     startHint.textContent = '按空格或点击屏幕起步，五灯未全亮前抢跑将犯规';
     const sequence = [0, 1, 2, 3, 4];
@@ -259,6 +375,7 @@
   });
   window.addEventListener('keyup', e => keys.delete(e.key));
   startButton.addEventListener('click', startRace);
+  loadingRetry.addEventListener('click', loadAllAssets);
   restartButton.addEventListener('click', () => { reset(); startRace(); });
   document.getElementById('videoPlaceholder').addEventListener('click', async () => {
     videoTheater.classList.remove('hidden');
@@ -284,5 +401,7 @@
     if (!document.fullscreenElement && !videoTheater.classList.contains('hidden') && birthdayVideo.paused) videoTheater.classList.add('hidden');
   });
   document.getElementById('endCard').addEventListener('click', e => { if (e.target === document.getElementById('endCard')) { reset(); startRace(); } });
-  reset(); requestAnimationFrame(frame);
+  reset();
+  loadAllAssets();
+  requestAnimationFrame(frame);
 })();
