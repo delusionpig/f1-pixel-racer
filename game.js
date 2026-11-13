@@ -267,7 +267,7 @@
     playerY = 400; pointerTarget = null; objects = []; particles = [];
     coinCount.textContent = '0'; damageCount.textContent = '♥ ♥';
     reactionTime.textContent = '--- ms'; startHint.textContent = '点击“点火出发”开始灯光倒计时';
-    restartButton.innerHTML = '再跑一圈 <span>↻</span>';
+    restartButton.innerHTML = '<img class="start-button-icon" src="start_buttom.png" alt="">再跑一圈';
     endCard.classList.add('hidden'); startCard.classList.remove('hidden'); overlay.classList.remove('hidden');
     stage.classList.remove('running'); signalImage.src = 'assets/start-light-0.png'; draw();
   }
@@ -297,7 +297,7 @@
     document.getElementById('endCopy').textContent = '五盏灯全亮前不能起步，请重新进行起步信号。';
     document.getElementById('podium').classList.add('hidden');
     document.getElementById('videoPlaceholder').classList.add('hidden');
-    restartButton.textContent = '重新起跑 ↻';
+    restartButton.innerHTML = '<img class="start-button-icon" src="start_buttom.png" alt="">重新起跑';
   }
 
   function launch() {
