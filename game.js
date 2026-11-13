@@ -7,9 +7,6 @@
   const loadingCard = document.getElementById('loadingCard');
   const loadingBackdrop = document.getElementById('loadingBackdrop');
   const loadingFill = document.getElementById('loadingFill');
-  const loadingPercent = document.getElementById('loadingPercent');
-  const loadingCount = document.getElementById('loadingCount');
-  const loadingStatus = document.getElementById('loadingStatus');
   const loadingRetry = document.getElementById('loadingRetry');
   const endCard = document.getElementById('endCard');
   const startButton = document.getElementById('startButton');
@@ -52,12 +49,9 @@
   const lanes = [268, 400, 532];
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-  function setLoadingProgress(loaded, label) {
+  function setLoadingProgress(loaded) {
     const percent = Math.min(100, Math.round((loaded + videoProgress) / totalAssets * 100));
     loadingFill.style.width = `${percent}%`;
-    loadingPercent.textContent = `${percent}%`;
-    loadingCount.textContent = `${loaded} / ${totalAssets}`;
-    if (label) loadingStatus.textContent = label;
   }
 
   function loadImage(image, src, label) {
@@ -103,13 +97,10 @@
         videoProgress = Math.min(.99, percent / 100);
         const overall = Math.floor((completedAssets + videoProgress) / totalAssets * 100);
         loadingFill.style.width = `${overall}%`;
-        loadingPercent.textContent = `${overall}%`;
-        loadingCount.textContent = `${completedAssets} / ${totalAssets}`;
-        loadingStatus.textContent = `正在下载生日祝福视频 ${percent}%…`;
       }
     } else {
       videoProgress = .99;
-      loadingStatus.textContent = '正在缓存生日祝福视频…';
+      setLoadingProgress(completedAssets);
     }
     await new Promise((resolve, reject) => {
       birthdayVideo.oncanplaythrough = resolve;
@@ -129,23 +120,24 @@
     startCard.classList.add('hidden');
     loadingRetry.classList.add('hidden');
     startButton.disabled = true;
-    loadingStatus.textContent = '正在检查赛车与赛道素材…';
     setLoadingProgress(0);
     let loaded = 0;
-    const tasks = assetImages.map(([image, src, label]) => loadImage(image, src, label));
-    tasks.push(loadBirthdayVideo());
-    tasks.push(loadAudio(backgroundMusic, 'BGM'));
     try {
-      startBackgroundMusic();
-      await Promise.all(tasks.map(task => task.then(label => {
+      await loadAudio(backgroundMusic, 'BGM');
+      loaded++;
+      completedAssets = loaded;
+      setLoadingProgress(loaded);
+      await backgroundMusic.play().catch(() => {});
+
+      const tasks = assetImages.map(([image, src, label]) => loadImage(image, src, label));
+      tasks.push(loadBirthdayVideo());
+      await Promise.all(tasks.map(task => task.then(() => {
         loaded++;
         completedAssets = loaded;
-        setLoadingProgress(loaded, `${label}已就绪`);
+        setLoadingProgress(loaded);
       })));
-      loaded = totalAssets;
-      completedAssets = totalAssets;
       assetsReady = true;
-      setLoadingProgress(totalAssets, '全部素材已就绪，车手请准备');
+      setLoadingProgress(totalAssets);
     loadingCard.classList.add('hidden');
     loadingBackdrop.classList.add('hidden');
     startBackgroundMusic();
@@ -153,7 +145,7 @@
       startHint.textContent = '所有游戏素材已加载，点击点火开始';
       startButton.disabled = false;
     } catch (error) {
-      loadingStatus.textContent = `${error.message}，请检查网络后重试`;
+      loadingRetry.title = `${error.message}，点击重试`;
       loadingRetry.classList.remove('hidden');
     }
   }
