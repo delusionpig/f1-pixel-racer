@@ -7,6 +7,8 @@
   const endCard = document.getElementById('endCard');
   const startButton = document.getElementById('startButton');
   const restartButton = document.getElementById('restartButton');
+  const birthdayVideo = document.getElementById('birthdayVideo');
+  const cinemaEmpty = document.getElementById('cinemaEmpty');
   const signalImage = document.getElementById('signalImage');
   const startHint = document.getElementById('startHint');
   const reactionTime = document.getElementById('reactionTime');
@@ -18,6 +20,9 @@
   const tireSprite = new Image(); tireSprite.src = 'assets/tires.png';
   const paddockFront = new Image(); paddockFront.src = 'assets/paddock-front.jpg';
   const paddockBack = new Image(); paddockBack.src = 'assets/paddock-back.jpg';
+  birthdayVideo.src = 'assets/birthday-message.mp4';
+  birthdayVideo.addEventListener('canplay', () => { birthdayVideo.hidden = false; cinemaEmpty.classList.add('hidden'); });
+  birthdayVideo.addEventListener('error', () => { birthdayVideo.hidden = true; cinemaEmpty.classList.remove('hidden'); });
   const W = 480, H = 800, ROAD_TOP = 184, ROAD_BOTTOM = 632;
   let state = 'ready', last = 0, elapsed = 0, scroll = 0, spawnTimer = 0;
   let coins = 0, hits = 0, playerY = 400, pointerTarget = null, objects = [], particles = [];
@@ -256,6 +261,7 @@
   window.addEventListener('keyup', e => keys.delete(e.key));
   startButton.addEventListener('click', startRace);
   restartButton.addEventListener('click', () => { reset(); startRace(); });
+  document.getElementById('cinemaPlay').addEventListener('click', () => birthdayVideo.play().catch(() => {}));
   document.getElementById('endCard').addEventListener('click', e => { if (e.target === document.getElementById('endCard')) { reset(); startRace(); } });
   reset(); requestAnimationFrame(frame);
 })();

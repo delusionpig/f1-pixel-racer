@@ -35,7 +35,14 @@
           <h2 id="endTitle">比赛结束</h2>
           <p id="endCopy"></p>
           <div class="podium hidden" id="podium"><img src="assets/podium.png" alt="F1像素风领奖台庆典" /></div>
-          <div class="video-placeholder hidden" id="videoPlaceholder"><div class="play-icon">▶</div><b>生日祝福时刻</b><small>领奖台视频播放区域</small></div>
+          <div class="video-placeholder hidden" id="videoPlaceholder">
+            <div class="cinema-marquee"><span></span> 生日祝福时刻 <span></span></div>
+            <div class="cinema-screen" id="cinemaScreen">
+              <div class="cinema-empty" id="cinemaEmpty"><button class="cinema-play" id="cinemaPlay" aria-label="播放生日祝福">▶</button><b>生日祝福即将播放</b><small>把视频放入 assets/birthday-message.mp4</small></div>
+              <video id="birthdayVideo" controls playsinline preload="metadata" hidden></video>
+            </div>
+            <div class="cinema-caption">BIRTHDAY GRAND PRIX · SPECIAL MOMENT</div>
+          </div>
           <button id="restartButton">再跑一圈 <span>↻</span></button>
           <div class="controls-hint">点击或按 Enter 重新开始</div>
         </div>
