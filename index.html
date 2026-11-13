@@ -35,16 +35,23 @@
           <h2 id="endTitle">比赛结束</h2>
           <p id="endCopy"></p>
           <div class="podium hidden" id="podium"><img src="assets/podium.png" alt="F1像素风领奖台庆典" /></div>
-          <div class="video-placeholder hidden" id="videoPlaceholder">
-            <div class="cinema-marquee"><span></span> 生日祝福时刻 <span></span></div>
-            <div class="cinema-screen" id="cinemaScreen">
-              <div class="cinema-empty" id="cinemaEmpty"><button class="cinema-play" id="cinemaPlay" aria-label="播放生日祝福">▶</button><b>生日祝福即将播放</b><small>把视频放入 assets/birthday-message.mp4</small></div>
-              <video id="birthdayVideo" controls playsinline preload="metadata" hidden></video>
-            </div>
-            <div class="cinema-caption">BIRTHDAY GRAND PRIX · SPECIAL MOMENT</div>
-          </div>
+          <button class="video-placeholder hidden" id="videoPlaceholder" type="button" aria-label="打开生日祝福视频">
+            <span class="cinema-play" aria-hidden="true">▶</span>
+            <span class="cinema-marquee">生日祝福时刻</span>
+            <span class="cinema-caption">点击播放 · BIRTHDAY SPECIAL</span>
+          </button>
           <button id="restartButton">再跑一圈 <span>↻</span></button>
           <div class="controls-hint">点击或按 Enter 重新开始</div>
+        </div>
+      </div>
+      <div class="video-theater hidden" id="videoTheater" role="dialog" aria-modal="true" aria-label="生日祝福视频播放器">
+        <button class="theater-close" id="theaterClose" type="button" aria-label="关闭视频">×</button>
+        <div class="tv-frame">
+          <div class="tv-topline"><span></span> BIRTHDAY GRAND PRIX <span></span></div>
+          <div class="tv-screen">
+            <video id="birthdayVideo" controls playsinline preload="metadata"></video>
+          </div>
+          <div class="tv-controls"><span class="tv-led"></span><span>生日祝福时刻</span><span class="tv-knob"></span></div>
         </div>
       </div>
       <div class="speed-lines" aria-hidden="true"><span></span><span></span><span></span></div>

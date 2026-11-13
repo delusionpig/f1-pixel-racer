@@ -8,7 +8,8 @@
   const startButton = document.getElementById('startButton');
   const restartButton = document.getElementById('restartButton');
   const birthdayVideo = document.getElementById('birthdayVideo');
-  const cinemaEmpty = document.getElementById('cinemaEmpty');
+  const videoTheater = document.getElementById('videoTheater');
+  const theaterClose = document.getElementById('theaterClose');
   const signalImage = document.getElementById('signalImage');
   const startHint = document.getElementById('startHint');
   const reactionTime = document.getElementById('reactionTime');
@@ -21,8 +22,6 @@
   const paddockFront = new Image(); paddockFront.src = 'assets/paddock-front.jpg';
   const paddockBack = new Image(); paddockBack.src = 'assets/paddock-back.jpg';
   birthdayVideo.src = 'assets/birthday-message.mp4';
-  birthdayVideo.addEventListener('canplay', () => { birthdayVideo.hidden = false; cinemaEmpty.classList.add('hidden'); });
-  birthdayVideo.addEventListener('error', () => { birthdayVideo.hidden = true; cinemaEmpty.classList.remove('hidden'); });
   const W = 480, H = 800, ROAD_TOP = 184, ROAD_BOTTOM = 632;
   let state = 'ready', last = 0, elapsed = 0, scroll = 0, spawnTimer = 0;
   let coins = 0, hits = 0, playerY = 400, pointerTarget = null, objects = [], particles = [];
@@ -261,7 +260,29 @@
   window.addEventListener('keyup', e => keys.delete(e.key));
   startButton.addEventListener('click', startRace);
   restartButton.addEventListener('click', () => { reset(); startRace(); });
-  document.getElementById('cinemaPlay').addEventListener('click', () => birthdayVideo.play().catch(() => {}));
+  document.getElementById('videoPlaceholder').addEventListener('click', async () => {
+    videoTheater.classList.remove('hidden');
+    try {
+      await birthdayVideo.play();
+      if (matchMedia('(max-width: 700px)').matches && videoTheater.requestFullscreen) {
+        await videoTheater.requestFullscreen();
+      }
+    } catch {
+      birthdayVideo.controls = true;
+    }
+  });
+  function closeVideoTheater() {
+    birthdayVideo.pause();
+    birthdayVideo.currentTime = 0;
+    videoTheater.classList.add('hidden');
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  }
+  theaterClose.addEventListener('click', closeVideoTheater);
+  videoTheater.addEventListener('click', e => { if (e.target === videoTheater) closeVideoTheater(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !videoTheater.classList.contains('hidden')) closeVideoTheater(); });
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && !videoTheater.classList.contains('hidden') && birthdayVideo.paused) videoTheater.classList.add('hidden');
+  });
   document.getElementById('endCard').addEventListener('click', e => { if (e.target === document.getElementById('endCard')) { reset(); startRace(); } });
   reset(); requestAnimationFrame(frame);
 })();
