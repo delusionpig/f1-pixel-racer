@@ -15,6 +15,7 @@
   const startButton = document.getElementById('startButton');
   const restartButton = document.getElementById('restartButton');
   const birthdayVideo = document.getElementById('birthdayVideo');
+  const backgroundMusic = document.getElementById('backgroundMusic');
   const videoTheater = document.getElementById('videoTheater');
   const theaterClose = document.getElementById('theaterClose');
   const signalImage = document.getElementById('signalImage');
@@ -29,7 +30,7 @@
   const paddockBack = new Image();
   const podiumImage = document.querySelector('#podium img');
   const startLights = Array.from({ length: 6 }, () => new Image());
-  const totalAssets = 13;
+  const totalAssets = 14;
   let assetsReady = false;
   let completedAssets = 0;
   let videoProgress = 0;
@@ -79,6 +80,14 @@
     });
   }
 
+  function loadAudio(audio, label) {
+    return new Promise((resolve, reject) => {
+      audio.addEventListener('canplaythrough', () => resolve(label), { once: true });
+      audio.addEventListener('error', () => reject(new Error(`${label}加载失败`)), { once: true });
+      audio.load();
+    });
+  }
+
   async function loadBirthdayVideo() {
     const response = await fetch(birthdayVideoUrl, { cache: 'force-cache' });
     if (!response.ok) throw new Error('生日祝福视频加载失败');
@@ -125,7 +134,9 @@
     let loaded = 0;
     const tasks = assetImages.map(([image, src, label]) => loadImage(image, src, label));
     tasks.push(loadBirthdayVideo());
+    tasks.push(loadAudio(backgroundMusic, 'BGM'));
     try {
+      startBackgroundMusic();
       await Promise.all(tasks.map(task => task.then(label => {
         loaded++;
         completedAssets = loaded;
@@ -135,9 +146,10 @@
       completedAssets = totalAssets;
       assetsReady = true;
       setLoadingProgress(totalAssets, '全部素材已就绪，车手请准备');
-      loadingCard.classList.add('hidden');
-      loadingBackdrop.classList.add('hidden');
-      startCard.classList.remove('hidden');
+    loadingCard.classList.add('hidden');
+    loadingBackdrop.classList.add('hidden');
+    startBackgroundMusic();
+    startCard.classList.remove('hidden');
       startHint.textContent = '所有游戏素材已加载，点击点火开始';
       startButton.disabled = false;
     } catch (error) {
@@ -247,6 +259,15 @@
     const g = ctx.createRadialGradient(119, playerY, 20, 119, playerY, 115);
     g.addColorStop(0, '#ff172018'); g.addColorStop(1, '#ff172000');
     ctx.fillStyle = g; ctx.fillRect(0, playerY - 115, 250, 230);
+  }
+
+  function startBackgroundMusic() {
+    if (videoTheater.classList.contains('hidden')) backgroundMusic.play().catch(() => {});
+  }
+
+  function stopBackgroundMusic() {
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
   }
 
   function reset() {
@@ -363,10 +384,12 @@
   canvas.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') pointerMove(e); });
   canvas.addEventListener('pointerup', () => { pointerTarget = null; });
   document.addEventListener('pointerdown', e => {
+    startBackgroundMusic();
     if (e.target === startButton || e.target === restartButton) return;
     if (state === 'countdown' || state === 'armed') launch();
   });
   window.addEventListener('keydown', e => {
+    startBackgroundMusic();
     if (['ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
     keys.add(e.key);
     if (e.code === 'Space' && (state === 'countdown' || state === 'armed')) { launch(); return; }
@@ -378,6 +401,7 @@
   loadingRetry.addEventListener('click', loadAllAssets);
   restartButton.addEventListener('click', () => { reset(); startRace(); });
   document.getElementById('videoPlaceholder').addEventListener('click', async () => {
+    stopBackgroundMusic();
     videoTheater.classList.remove('hidden');
     try {
       await birthdayVideo.play();
@@ -392,6 +416,7 @@
     birthdayVideo.pause();
     birthdayVideo.currentTime = 0;
     videoTheater.classList.add('hidden');
+    startBackgroundMusic();
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   }
   theaterClose.addEventListener('click', closeVideoTheater);
