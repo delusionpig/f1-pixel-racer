@@ -76,9 +76,19 @@
 
   function loadAudio(audio, label) {
     return new Promise((resolve, reject) => {
-      audio.addEventListener('canplaythrough', () => resolve(label), { once: true });
-      audio.addEventListener('error', () => reject(new Error(`${label}加载失败`)), { once: true });
-      audio.load();
+      if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+        resolve(label);
+        return;
+      }
+      const cleanup = () => {
+        audio.removeEventListener('canplay', onReady);
+        audio.removeEventListener('error', onError);
+      };
+      const onReady = () => { cleanup(); resolve(label); };
+      const onError = () => { cleanup(); reject(new Error(`${label}加载失败`)); };
+      audio.addEventListener('canplay', onReady, { once: true });
+      audio.addEventListener('error', onError, { once: true });
+      if (audio.error) audio.load();
     });
   }
 
@@ -123,11 +133,12 @@
     setLoadingProgress(0);
     let loaded = 0;
     try {
-      await loadAudio(backgroundMusic, 'BGM');
+      const musicReady = loadAudio(backgroundMusic, 'BGM');
+      startBackgroundMusic();
+      await musicReady;
       loaded++;
       completedAssets = loaded;
       setLoadingProgress(loaded);
-      await backgroundMusic.play().catch(() => {});
 
       const tasks = assetImages.map(([image, src, label]) => loadImage(image, src, label));
       tasks.push(loadBirthdayVideo());
