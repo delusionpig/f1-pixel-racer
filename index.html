@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <audio id="backgroundMusic" src="assets/background-music.mp3" preload="auto" autoplay loop></audio>
+  <audio id="backgroundMusic" src="assets/background-music.mp3" preload="auto" loop></audio>
   <main class="game-shell">
     <header class="topbar">
       <div class="brand"><span class="brand-mark">GP</span><div><b>生日大奖赛</b><small>PIXEL GRAND PRIX</small></div></div>
@@ -22,7 +22,13 @@
       </div>
       <div class="overlay" id="overlay">
         <div class="loading-backdrop" id="loadingBackdrop"></div>
-        <div class="loading-card" id="loadingCard" role="status" aria-live="polite">
+        <div class="loading-card" id="prepareCard">
+          <div class="eyebrow">SCUDERIA PIXEL · PADDOCK</div>
+          <h1>生日大奖赛</h1>
+          <button id="prepareButton" type="button">准备车队</button>
+          <div class="controls-hint">点击开启音乐，准备出发</div>
+        </div>
+        <div class="loading-card hidden" id="loadingCard" role="status" aria-live="polite">
           <div class="eyebrow">SCUDERIA PIXEL · SYSTEM CHECK</div>
           <img class="loading-car" src="assets/race-car.png" alt="" />
           <h1>车队准备中</h1>

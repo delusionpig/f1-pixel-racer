@@ -4,6 +4,8 @@
   const stage = document.querySelector('.stage');
   const overlay = document.getElementById('overlay');
   const startCard = document.getElementById('startCard');
+  const prepareCard = document.getElementById('prepareCard');
+  const prepareButton = document.getElementById('prepareButton');
   const loadingCard = document.getElementById('loadingCard');
   const loadingBackdrop = document.getElementById('loadingBackdrop');
   const loadingFill = document.getElementById('loadingFill');
@@ -28,6 +30,7 @@
   const podiumImage = document.querySelector('#podium img');
   const startLights = Array.from({ length: 6 }, () => new Image());
   const totalAssets = 14;
+  let teamPrepared = false;
   let assetsReady = false;
   let completedAssets = 0;
   let videoProgress = 0;
@@ -125,7 +128,7 @@
     assetsReady = false;
     completedAssets = 0;
     videoProgress = 0;
-    loadingCard.classList.remove('hidden');
+    loadingCard.classList.toggle('hidden', !teamPrepared);
     loadingBackdrop.classList.remove('hidden');
     startCard.classList.add('hidden');
     loadingRetry.classList.add('hidden');
@@ -134,13 +137,7 @@
     let loaded = 0;
     try {
       const musicReady = loadAudio(backgroundMusic, 'BGM');
-      startBackgroundMusic();
-      await musicReady;
-      loaded++;
-      completedAssets = loaded;
-      setLoadingProgress(loaded);
-
-      const tasks = assetImages.map(([image, src, label]) => loadImage(image, src, label));
+      const tasks = [musicReady, ...assetImages.map(([image, src, label]) => loadImage(image, src, label))];
       tasks.push(loadBirthdayVideo());
       await Promise.all(tasks.map(task => task.then(() => {
         loaded++;
@@ -149,16 +146,28 @@
       })));
       assetsReady = true;
       setLoadingProgress(totalAssets);
-    loadingCard.classList.add('hidden');
-    loadingBackdrop.classList.add('hidden');
-    startBackgroundMusic();
-    startCard.classList.remove('hidden');
+      if (teamPrepared) showStartCard();
       startHint.textContent = '所有游戏素材已加载，点击点火开始';
       startButton.disabled = false;
     } catch (error) {
       loadingRetry.title = `${error.message}，点击重试`;
       loadingRetry.classList.remove('hidden');
     }
+  }
+
+  function showStartCard() {
+    loadingCard.classList.add('hidden');
+    loadingBackdrop.classList.add('hidden');
+    startCard.classList.remove('hidden');
+  }
+
+  function prepareTeam() {
+    if (teamPrepared) return;
+    teamPrepared = true;
+    startBackgroundMusic();
+    prepareCard.classList.add('hidden');
+    if (assetsReady) showStartCard();
+    else loadingCard.classList.remove('hidden');
   }
 
   function drawPixelRoad(dt) {
@@ -265,7 +274,7 @@
   }
 
   function startBackgroundMusic() {
-    if (videoTheater.classList.contains('hidden')) backgroundMusic.play().catch(() => {});
+    if (teamPrepared && videoTheater.classList.contains('hidden')) backgroundMusic.play().catch(() => {});
   }
 
   function stopBackgroundMusic() {
@@ -284,7 +293,7 @@
   }
 
   function startRace() {
-    if (!assetsReady || state === 'countdown' || state === 'running') return;
+    if (!teamPrepared || !assetsReady || state === 'countdown' || state === 'running') return;
     state = 'countdown'; startButton.disabled = true;
     startHint.textContent = '按空格或点击屏幕起步，五灯未全亮前抢跑将犯规';
     const sequence = [0, 1, 2, 3, 4];
@@ -400,6 +409,7 @@
     else if (e.key === 'Enter' && ['lost','won','falseStart'].includes(state)) { reset(); startRace(); }
   });
   window.addEventListener('keyup', e => keys.delete(e.key));
+  prepareButton.addEventListener('click', prepareTeam);
   startButton.addEventListener('click', startRace);
   loadingRetry.addEventListener('click', loadAllAssets);
   restartButton.addEventListener('click', () => { reset(); startRace(); });
@@ -430,6 +440,7 @@
   });
   document.getElementById('endCard').addEventListener('click', e => { if (e.target === document.getElementById('endCard')) { reset(); startRace(); } });
   reset();
+  startCard.classList.add('hidden');
   loadAllAssets();
   requestAnimationFrame(frame);
 })();

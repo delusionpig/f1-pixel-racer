@@ -30,8 +30,16 @@ async function check() {
   const events = [];
   let allowMusic;
   const musicReady = new Promise(resolve => { allowMusic = resolve; });
-  const element = () => ({ classList: { add() {}, remove() {} } });
+  const element = (hidden = true) => {
+    const classes = new Set(hidden ? ['hidden'] : []);
+    return { classList: {
+      add: name => classes.add(name), remove: name => classes.delete(name),
+      contains: name => classes.has(name),
+      toggle: (name, force) => force ? classes.add(name) : classes.delete(name)
+    } };
+  };
   Object.assign(context, {
+    teamPrepared: false, prepareCard: element(false),
     loadingCard: element(), loadingBackdrop: element(), startCard: element(),
     loadingRetry: element(), startButton: {}, startHint: {}, backgroundMusic: audio,
     totalAssets: 3, setLoadingProgress() {},
@@ -43,11 +51,33 @@ async function check() {
   });
   vm.runInContext(assetLoader, context);
   const loading = context.loadAllAssets();
-  assert.deepEqual(events, ['music-load', 'music-play']);
+  assert.deepEqual(events, ['music-load', 'image-load', 'video-load']);
+  assert.equal(context.loadingCard.classList.contains('hidden'), true);
+  context.prepareTeam();
+  assert.equal(events.at(-1), 'music-play', 'Play directly in the preparation click');
+  assert.equal(context.prepareCard.classList.contains('hidden'), true);
+  assert.equal(context.loadingCard.classList.contains('hidden'), false);
   allowMusic();
   await loading;
-  assert.deepEqual(events.slice(2, 4), ['image-load', 'video-load']);
   assert.equal(context.assetsReady, true, 'Pending playback must not block asset loading');
+  assert.equal(context.startCard.classList.contains('hidden'), false);
+
+  context.teamPrepared = false;
+  context.prepareCard = element(false);
+  context.startCard = element();
+  await context.loadAllAssets();
+  assert.equal(context.prepareCard.classList.contains('hidden'), false);
+  assert.equal(context.startCard.classList.contains('hidden'), true, 'Stay at entrance until clicked');
+  context.prepareTeam();
+  assert.equal(context.startCard.classList.contains('hidden'), false, 'Cached assets skip loading screen');
+
+  context.teamPrepared = false;
+  context.prepareCard = element(false);
+  context.loadImage = async () => { throw new Error('image failed'); };
+  await context.loadAllAssets();
+  assert.equal(context.loadingRetry.classList.contains('hidden'), false);
+  context.prepareTeam();
+  assert.equal(context.loadingCard.classList.contains('hidden'), false, 'Reveal failed load and retry after click');
   console.log('Audio loading checks passed');
 }
 
