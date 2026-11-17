@@ -25,11 +25,14 @@
   const car = new Image();
   const coinSprite = new Image();
   const tireSprite = new Image();
+  const mercedesWreckSprite = new Image();
+  const redBullWreckSprite = new Image();
+  const finishLineSprite = new Image();
   const paddockFront = new Image();
   const paddockBack = new Image();
   const podiumImage = document.querySelector('#podium img');
   const startLights = Array.from({ length: 6 }, () => new Image());
-  const totalAssets = 14;
+  const totalAssets = 17;
   let teamPrepared = false;
   let assetsReady = false;
   let completedAssets = 0;
@@ -38,6 +41,9 @@
     [car, 'assets/race-car.png', '赛车精灵'],
     [coinSprite, 'assets/coin.png', '金币素材'],
     [tireSprite, 'assets/tires.png', '轮胎素材'],
+    [mercedesWreckSprite, 'assets/mercide_broke.png', '奔驰残骸'],
+    [redBullWreckSprite, 'assets/redbull_broke2.png', '红牛残骸'],
+    [finishLineSprite, 'assets/finish_line.png', '终点线'],
     [paddockFront, 'assets/paddock-front.jpg', '赛道前景'],
     [paddockBack, 'assets/paddock-back.jpg', '赛道背景'],
     [podiumImage, 'assets/podium.png', '领奖台'],
@@ -47,7 +53,7 @@
   const W = 480, H = 800, ROAD_TOP = 184, ROAD_BOTTOM = 632;
   let state = 'ready', last = 0, elapsed = 0, scroll = 0, spawnTimer = 0;
   let coins = 0, hits = 0, playerY = 400, pointerTarget = null, objects = [], particles = [];
-  let lightsReadyAt = 0;
+  let lightsReadyAt = 0, finishLineX = null;
   const keys = new Set();
   const lanes = [268, 400, 532];
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -197,12 +203,18 @@
         ctx.fillStyle = '#f5f1dc'; ctx.fillRect(x, y, 44, 5);
       }
     }
-    // F1 start/finish stripe, seen briefly during each lap.
-    const finishX = W - (scroll % 4200);
-    if (finishX > -30 && finishX < W + 30 && scroll > 1500) {
-      for (let y = ROAD_TOP; y < ROAD_BOTTOM; y += 24) for (let x = 0; x < 24; x += 12) {
-        ctx.fillStyle = ((y / 24 + x / 12) % 2) ? '#f2f2ed' : '#181819';
-        ctx.fillRect(finishX + x, y, 12, 12);
+    if (finishLineX !== null && finishLineX > -100 && finishLineX < W + 100) {
+      if (finishLineSprite.complete && finishLineSprite.naturalWidth) {
+        ctx.drawImage(
+          finishLineSprite,
+          0, 32, 1134, 1193,
+          finishLineX - 96, ROAD_TOP, 192, ROAD_BOTTOM - ROAD_TOP
+        );
+      } else {
+        for (let y = ROAD_TOP; y < ROAD_BOTTOM; y += 24) for (let x = 0; x < 24; x += 12) {
+          ctx.fillStyle = ((y / 24 + x / 12) % 2) ? '#f2f2ed' : '#181819';
+          ctx.fillRect(finishLineX + x, y, 12, 12);
+        }
       }
     }
   }
@@ -243,6 +255,19 @@
   }
 
   function drawTire(o) {
+    const wreckSprite = o.type === 'mercedes' ? mercedesWreckSprite : o.type === 'redbull' ? redBullWreckSprite : null;
+    if (wreckSprite?.complete && wreckSprite.naturalWidth) {
+      if (o.type === 'redbull') {
+        ctx.save();
+        ctx.translate(o.x, o.y);
+        ctx.scale(-1, 1);
+        ctx.drawImage(wreckSprite, -90, -37, 180, 74);
+        ctx.restore();
+      } else {
+        ctx.drawImage(wreckSprite, o.x - 90, o.y - 37, 180, 74);
+      }
+      return;
+    }
     if (tireSprite.complete && tireSprite.naturalWidth) {
       ctx.drawImage(tireSprite, o.x - 42, o.y - 39, 84, 78);
       return;
@@ -283,7 +308,7 @@
   }
 
   function reset() {
-    state = 'ready'; elapsed = 0; scroll = 0; spawnTimer = .75; coins = 0; hits = 0;
+    state = 'ready'; elapsed = 0; scroll = 0; spawnTimer = .75; coins = 0; hits = 0; finishLineX = null;
     playerY = 400; pointerTarget = null; objects = []; particles = [];
     coinCount.textContent = '0'; damageCount.textContent = '♥ ♥';
     reactionTime.textContent = '--- ms'; startHint.textContent = '点击“点火出发”开始灯光倒计时';
@@ -324,19 +349,23 @@
     if (state === 'countdown') { falseStart(); return; }
     if (state !== 'armed') return;
     reactionTime.textContent = `${Math.round(performance.now() - lightsReadyAt)} ms`;
-    state = 'running'; elapsed = 0; spawnTimer = .45;
+    state = 'running'; elapsed = 0; spawnTimer = .65;
     startButton.disabled = false; overlay.classList.add('hidden'); stage.classList.add('running');
   }
 
+  function spawnObstacle() {
+    const roll = Math.random();
+    return roll < .15 ? 'mercedes' : roll < .30 ? 'redbull' : 'tire';
+  }
+
   function spawn() {
-    // Keep a clear lane when a pair of tire stacks appears.
+    // Keep a clear lane when a pair of obstacles appears.
     const lane = lanes[Math.floor(Math.random() * lanes.length)];
-    const isCoin = Math.random() < .36;
-    objects.push({ type: isCoin ? 'coin' : 'tire', x: W + 45, y: lane, phase: Math.random() * 6 });
+    const isCoin = Math.random() < .40;
+    objects.push({ type: isCoin ? 'coin' : spawnObstacle(), x: W + 45, y: lane, phase: Math.random() * 6 });
     if (!isCoin && Math.random() < .34) {
-      const blockedLanes = [lane];
-      const other = lanes.filter(y => !blockedLanes.includes(y))[Math.floor(Math.random() * 2)];
-      objects.push({ type: 'tire', x: W + 165, y: other, phase: 0 });
+      const other = lanes.filter(y => y !== lane)[Math.floor(Math.random() * 2)];
+      objects.push({ type: spawnObstacle(), x: W + 165, y: other, phase: 0 });
     }
   }
 
@@ -356,8 +385,12 @@
 
   function update(dt) {
     elapsed += dt;
-    const speed = Math.min(330, 242 + elapsed * 2.2);
+    const speed = Math.min(390, 250 + elapsed * 2.3);
     scroll += speed * dt;
+    if (finishLineX !== null) {
+      finishLineX -= speed * dt;
+      if (finishLineX - 96 <= 116) { finish(true); return; }
+    }
     if (pointerTarget !== null) playerY += (pointerTarget - playerY) * Math.min(1, dt * 11);
     else {
       let dir = 0;
@@ -366,13 +399,15 @@
       playerY += dir * 320 * dt;
     }
     playerY = clamp(playerY, ROAD_TOP + 52, ROAD_BOTTOM - 52);
-    spawnTimer -= dt;
-    if (spawnTimer <= 0) { spawn(); spawnTimer = Math.max(.78, .96 - elapsed * .003) + Math.random() * .24; }
+    if (finishLineX === null) {
+      spawnTimer -= dt;
+      if (spawnTimer <= 0) { spawn(); spawnTimer = Math.max(1.3, 1.65 - elapsed * .004) + Math.random() * .3; }
+    }
     for (const o of objects) {
       o.x -= speed * dt;
       if (!o.done && Math.abs(o.x - 116) < 34 && Math.abs(o.y - playerY) < (o.type === 'coin' ? 48 : 45)) {
         o.done = true;
-        if (o.type === 'coin') { coins++; coinCount.textContent = String(coins); burst(o.x, o.y, '#ffd348'); if (coins >= 5) finish(true); }
+        if (o.type === 'coin') { coins++; coinCount.textContent = String(coins); burst(o.x, o.y, '#ffd348'); if (coins >= 10) finishLineX = W + 24; }
         else { hits++; damageCount.textContent = hits === 1 ? '♥ ·' : '· ·'; burst(o.x, o.y, '#ff3945'); if (hits >= 2) finish(false); }
       }
       if (state !== 'running') break;
